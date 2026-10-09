@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UCSB macros · Meal planner</title>
+<style>
+:root{--ink:#152a35;--paper:#f6f4ec;--line:#d4d8ce;--green:#d7ec80;--muted:#607078;--orange:#b34720;--white:#fffefa}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:"Segoe UI",sans-serif;font-size:15px}
+button,input,select{font:inherit}button,a,input,select{touch-action:manipulation}button{cursor:pointer}button:disabled{cursor:wait;opacity:.5}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+header{padding:24px 4.5vw 18px;border-bottom:1px solid var(--ink);display:flex;align-items:center;justify-content:space-between;gap:18px;background:var(--white)}
+.brand{font-family:Georgia,serif;font-size:31px;letter-spacing:-1.2px}.brand span{font-style:italic}.eyebrow{text-transform:uppercase;font-size:11px;letter-spacing:1.8px;font-weight:700;color:var(--muted)}
+a{color:inherit}header a{font-size:13px}main{max-width:1580px;margin:auto;padding:26px 4.5vw}.intro{margin-bottom:18px}
+h1{font-family:Georgia,serif;font-weight:400;font-size:clamp(26px,3vw,36px);letter-spacing:-1px;margin:0}p{line-height:1.5;margin:6px 0;color:var(--muted)}
+.filters{display:grid;grid-template-columns:1.4fr 1.4fr 1fr 1fr;gap:14px;padding:20px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+label{display:block;font-size:12px;color:var(--muted)}select,input{border:1px solid var(--line);border-radius:5px;background:var(--white);color:var(--ink);padding:10px 11px;min-height:42px;max-width:100%}label select,label input{display:block;width:100%;margin-top:6px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:26px;align-items:start;margin-top:26px}.toolbar{display:flex;gap:10px;margin-bottom:15px;align-items:center;flex-wrap:wrap}.toolbar input{flex:1;min-width:180px}.toolbar select{max-width:205px}.small-button{border:1px solid var(--line);background:var(--white);border-radius:5px;padding:10px 12px;color:var(--ink);min-height:42px}
+.menu-title{font-family:Georgia,serif;font-size:22px;margin:0 0 5px}.status{font-size:12px;color:var(--muted);margin-bottom:18px;min-height:18px}.status.error{color:var(--orange)}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:6px;background:var(--white)}table{border-collapse:collapse;width:100%;font-size:13px}th{font-size:10px;text-transform:uppercase;letter-spacing:.8px;text-align:right;padding:14px 11px;background:#edf0e5;color:var(--muted);white-space:nowrap}th:first-child,td:first-child{text-align:left}td{padding:13px 11px;border-top:1px solid #e5e7df;text-align:right;font-variant-numeric:tabular-nums}td:first-child{min-width:210px}td:nth-child(3){color:#375c14;font-weight:700}.food-name{font-weight:600;line-height:1.45}.serving{font-size:11px;color:var(--muted);margin-top:4px}.qty{width:63px;min-height:34px;padding:7px 5px;text-align:center}.group td{background:#f4f5ef;color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:600;padding:9px 11px}.selected{background:#f8fce9}
+.empty{padding:35px 18px;text-align:center;color:var(--muted)}aside{background:var(--ink);color:var(--white);padding:22px;border-radius:7px;position:sticky;top:20px}aside p,aside label{color:#b8c5c9}aside h2{font-family:Georgia,serif;font-size:25px;font-weight:400;margin:0 0 6px}.plate-count{font-size:12px;color:#b8c5c9}.totals{display:grid;grid-template-columns:1fr 1fr;gap:18px 12px;padding:21px 0;border-bottom:1px solid #52636a}.metric strong{display:block;font-size:25px;font-weight:500;font-variant-numeric:tabular-nums}.metric span{font-size:11px;color:#b8c5c9}.plate-items{max-height:260px;overflow:auto;margin:17px 0}.plate-item{display:flex;align-items:start;gap:8px;padding:8px 0;font-size:12px;line-height:1.5}.plate-item span{flex:1}.plate-item button{border:0;background:none;color:#c7d2d6;font-size:18px;padding:0 3px}.plate-item small{display:block;color:#b8c5c9}.primary{width:100%;border:0;background:var(--green);color:var(--ink);padding:12px;border-radius:4px;font-weight:700;margin-top:12px;min-height:43px}.link-button{border:0;background:transparent;color:inherit;text-decoration:underline;padding:10px 0;font-size:12px}.plan-fields{display:grid;gap:10px}.save-status{font-size:12px;margin-top:8px;line-height:1.4;color:var(--green)}
+.saved{margin-top:36px;border-top:1px solid var(--line);padding-top:22px}.saved-header{display:flex;align-items:center;justify-content:space-between;gap:16px}.saved h2{font-family:Georgia,serif;font-size:27px;font-weight:400;margin:0}.saved-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:13px;margin-top:16px}.saved-card{border:1px solid var(--line);padding:18px;border-radius:5px;background:var(--white)}.saved-card h3{margin:7px 0 9px;font-size:16px}.saved-card p{font-size:12px}.saved-card button{margin-top:12px}.saved-totals{font-family:Consolas,monospace;font-size:12px}.footer{font-size:11px;line-height:1.7;color:var(--muted);margin-top:28px;max-width:800px}.loading{animation:pulse 1.5s infinite}@keyframes pulse{50%{opacity:.45}}
+@media(max-width:1000px){main{padding:25px 3vw}.layout{grid-template-columns:minmax(0,1fr) 270px;gap:18px}.filters{grid-template-columns:1fr 1fr}}@media(max-width:760px){header{padding:20px}.brand{font-size:25px}header .eyebrow{display:none}main{padding:23px 18px}.intro{display:block}.layout{grid-template-columns:1fr}aside{position:static}.table-wrap{max-height:65vh}.filters{gap:10px}.saved-header{align-items:start;flex-direction:column}}@media(prefers-reduced-motion:reduce){.loading{animation:none}}
+</style>
+<style>@media(max-width:760px){#rows .group td:before{content:none!important}}</style>
+<style>
+@media(max-width:760px){section[aria-label="Menu and macros"] .table-wrap table{display:block}section[aria-label="Menu and macros"] thead{display:none}#rows{display:block}#rows tr:not(.group){display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:12px;border-top:1px solid var(--line)}#rows td{display:block;border:0;text-align:left;padding:5px 3px;min-width:0}#rows td:first-child,#rows td:last-child{grid-column:1/-1}#rows td:first-child{padding-bottom:9px}#rows td:nth-child(2):before{content:"Calories"}#rows td:nth-child(3):before{content:"Protein (g)"}#rows td:nth-child(4):before{content:"Carbs (g)"}#rows td:nth-child(5):before{content:"Fat (g)"}#rows td:nth-child(n+2):nth-child(-n+5):before{display:block;font-size:9px;color:var(--muted);font-weight:400;margin-bottom:5px}#rows td:last-child:before{content:"Servings on plate";font-size:11px;color:var(--muted);margin-right:12px}.group{display:block}.group td{padding:10px 14px!important}.table-wrap{max-height:65vh}}
+</style>
+<style>
+.food-name{display:block;border:0;background:none;color:inherit;font-size:inherit;text-align:left;padding:0;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}.food-name:hover{text-decoration-color:var(--orange);color:var(--orange)}
+.label-dialog{overflow:hidden;padding:0;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);width:min(560px,calc(100vw - 24px));max-height:90dvh;box-shadow:0 18px 80px #152a3540}.label-dialog::backdrop{background:#152a3580}.label-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);background:var(--white)}.label-heading h2{margin:0;font-size:16px;font-weight:600}.label-close{border:0;background:transparent;color:inherit;font-size:26px;width:42px;height:42px;line-height:1}.label-body{max-height:calc(90dvh - 68px);overflow:auto;overscroll-behavior:contain}.label-status{padding:24px 18px;margin:0}.label-body iframe{display:block;width:100%;height:600px;border:0;background:#fff}.label-body iframe[hidden]{display:none}body:has(.label-dialog[open]){overflow:hidden}
+</style>
+<header><div class="brand">UCSB <span>macros</span></div><a href="https://nutrition.info.dining.ucsb.edu/NetNutrition/1" target="_blank" rel="noopener">UCSB Dining ↗</a></header>
+<main>
+<div class="intro"><h1>Menus & macros</h1></div>
+<div class="filters">
+<label>Dining location<select id="hall" aria-label="Dining location"></select></label>
+<label>Menu section<select id="section" aria-label="Menu section"></select></label>
+<label>Menu date<select id="date" aria-label="Menu date"></select></label>
+<label>Meal<select id="meal" aria-label="Meal"></select></label>
+</div>
+<div class="layout"><section aria-label="Menu and macros">
+<div class="toolbar"><input id="search" type="search" placeholder="Search foods" aria-label="Search foods"><select id="sort" aria-label="Sort menu"><option value="station">By station</option><option value="protein">Most protein</option><option value="calories">Lowest calories</option><option value="name">A–Z</option></select><button class="small-button" id="export-menu">Export menu CSV</button></div>
+<h2 class="menu-title" id="menu-title">Loading dining locations…</h2><div id="status" class="status" role="status" aria-live="polite">Connecting to UCSB.</div>
+<div class="table-wrap"><table><thead><tr><th>Food / one serving</th><th>Calories</th><th>Protein (g)</th><th>Carbs (g)</th><th>Fat (g)</th><th>On plate</th></tr></thead><tbody id="rows"></tbody></table><div class="empty" id="empty" hidden>No foods match your search.</div></div>
+</section>
+<aside aria-label="Your plate"><h2>Your plate</h2><div class="plate-count" id="plate-count">Add servings from the menu.</div>
+<div class="totals"><div class="metric"><strong id="total-calories">0</strong><span>calories</span></div><div class="metric"><strong id="total-protein_g">0 g</strong><span>protein</span></div><div class="metric"><strong id="total-carbs_g">0 g</strong><span>carbs</span></div><div class="metric"><strong id="total-fat_g">0 g</strong><span>fat</span></div></div>
+<div class="plate-items" id="plate-items"></div><button class="link-button" id="clear">Clear plate</button>
+<div class="plan-fields"><label>Meal name<input id="plan-name" placeholder="Thursday lunch"></label><label>Date<input id="plan-date" type="date"></label><label>Meal<input id="plan-meal" placeholder="Lunch or dinner"></label></div>
+<button class="primary" id="save">Save meal</button><div class="save-status" id="save-status" role="status" aria-live="polite"></div>
+</aside></div>
+<section class="saved"><div class="saved-header"><h2>Saved meals</h2><button class="small-button" id="export-plans">Export plans CSV</button></div><div class="saved-list" id="saved-list"></div></section>
+<section class="saved"><div class="saved-header"><h2>Prep portions</h2><div class="toolbar"><label>From<input id="prep-from" type="date"></label><label>Through<input id="prep-to" type="date"></label><button class="small-button" id="export-prep">Export prep CSV</button></div></div><div id="prep-list"></div></section>
+<p class="footer">Per-serving estimates from UCSB Dining.</p>
+</main>
+<dialog id="label-dialog" class="label-dialog" aria-labelledby="label-heading">
+<div class="label-heading"><h2 id="label-heading">Nutrition label</h2><button id="label-close" class="label-close" aria-label="Close nutrition label" autofocus>×</button></div>
+<div class="label-body"><p id="label-status" class="label-status" role="status" aria-live="polite">Loading label…</p><iframe id="label-frame" title="Nutrition label" sandbox="allow-same-origin" hidden></iframe></div>
+</dialog>
+<script>
+const $=id=>document.getElementById(id), fields=['calories','protein_g','carbs_g','fat_g'];
+let halls=[],choices=[],current=null,plate=new Map(),saved=[],selectionVersion=0,prep=[],menuRefreshTimer=null;
+let labelVersion=0,labelResize=null;
+const fmt=v=>v==null?'—':Number(v.toFixed(2)).toString();
+const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+function esc(v){const span=document.createElement('span');span.textContent=String(v??'');return span.innerHTML.replaceAll('"','&quot;').replaceAll("'",'&#39;');}
+async function api(path,options){const r=await fetch(path,options),d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d;}
+function populate(id,options){$(id).replaceChildren(...options.map(o=>{const el=document.createElement('option');el.value=o.value;el.textContent=o.label;return el}));}
+function status(message,error=false){$('status').textContent=message;$('status').className='status'+(error?' error':'');}
+function key(item){return `${$('hall').value}:${$('section').value}:${current.id}:${item.id}`;}
+function sum(items){return Object.fromEntries(fields.map(f=>[f,items.some(i=>i[f]==null)?null:items.reduce((a,i)=>a+i[f]*i.servings,0)]));}
+function setDisabled(value){['hall','section','date','meal'].forEach(id=>$(id).disabled=value);}
+async function openLabel(item){
+  const version=++labelVersion;
+  const query=new URLSearchParams({hall:$('hall').value,section:$('section').value,menu:current.id,item:item.id});
+  const dialog=$('label-dialog'),frame=$('label-frame'),message=$('label-status');
+  labelResize?.disconnect();labelResize=null;
+  frame.hidden=true;frame.onload=null;frame.style.height='1px';frame.removeAttribute('srcdoc');
+  message.hidden=false;message.textContent='Loading label…';
+  $('label-heading').textContent=item.name;
+  frame.title=`${item.name} nutrition label`;
+  dialog.showModal();
+  try{
+    const data=await api('/api/label?'+query);
+    if(version!==labelVersion||!dialog.open)return;
+    frame.onload=()=>{
+      if(version!==labelVersion||!dialog.open)return;
+      const doc=frame.contentDocument;
+      const fit=()=>{if(version===labelVersion&&dialog.open)frame.style.height=(Math.ceil(doc.getElementById('nutritionLabel').getBoundingClientRect().height)+26)+'px';};
+      fit();
+      labelResize=new ResizeObserver(fit);
+      labelResize.observe(doc.getElementById('nutritionLabel'));
+      message.hidden=true;
+    };
+    frame.srcdoc=data.document;
+    frame.hidden=false;
+  }catch(e){
+    if(version===labelVersion&&dialog.open)message.textContent=e.message;
+  }
+}
+$('label-close').onclick=()=>$('label-dialog').close();
+$('label-dialog').addEventListener('close',()=>{++labelVersion;labelResize?.disconnect();labelResize=null;$('label-frame').hidden=true;});
+$('label-dialog').addEventListener('click',e=>{if(e.target===$('label-dialog')){const rect=e.target.getBoundingClientRect();if(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)e.target.close();}});
+async function loadSections(){const h=halls.find(h=>h.id===$('hall').value*1);populate('section',h.sections.map(s=>({value:s.id,label:s.name})));const daily=h.sections.find(s=>/Daily Menu/i.test(s.name));if(daily)$('section').value=daily.id;await loadOptions();}
+async function loadOptions(){const version=++selectionVersion;setDisabled(true);current=null;render();status('Loading menus…');try{const data=await api(`/api/options?hall=${$('hall').value}&section=${$('section').value}`);if(version!==selectionVersion)return;choices=data.menus;const dates=[...new Set(choices.map(m=>m.date))];populate('date',dates.map(d=>({value:d,label:choices.find(m=>m.date===d).date_label})));if(dates.includes(today()))$('date').value=today();loadMeals();await loadMenu();}catch(e){status(e.message,true);}finally{if(version===selectionVersion)setDisabled(false);}}
+function loadMeals(){const list=choices.filter(m=>m.date===$('date').value);populate('meal',list.map(m=>({value:m.id,label:m.meal})));const lunch=list.find(m=>m.meal==='Lunch');if(lunch)$('meal').value=lunch.id;}
+function showMenu(data){
+  const changed=!current||current.id!==data.id||JSON.stringify(current.items)!==JSON.stringify(data.items);
+  current=data;
+  $('menu-title').textContent=`${data.hall} · ${data.meal}`;
+  const failures=data.items.filter(i=>i.error).length;
+  const savedAt=data.cached?` · Saved ${new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',hour:'numeric',minute:'2-digit'}).format(new Date(data.fetched_at))}`:'';
+  status(`${data.items.length} foods · ${data.date_label}${savedAt}${data.refreshing?' · Updating…':''}${failures?` · ${failures} labels unavailable`:''}`,!!failures);
+  if(!plate.size){$('plan-date').value=data.date==='everyday'?today():data.date;$('plan-meal').value=data.meal==='Everyday menu'?'':data.meal;}
+  if(changed)render();
+}
+async function refreshMenu(path,version,attempt=0){
+  if(version!==selectionVersion)return;
+  try{
+    const data=await api(path);
+    if(version!==selectionVersion)return;
+    showMenu(data);
+    if(data.refreshing&&attempt<20)menuRefreshTimer=setTimeout(()=>refreshMenu(path,version,attempt+1),1500);
+  }catch(e){if(version===selectionVersion)status('Could not refresh. Showing saved menu.',true);}
+}
+async function loadMenu(){
+  const version=++selectionVersion;
+  clearTimeout(menuRefreshTimer);
+  if(!choices.length){$('menu-title').textContent='No menus published';status('No menus available.');current=null;render();return;}
+  const path=`/api/menu?hall=${$('hall').value}&section=${$('section').value}&menu=${$('meal').value}`;
+  setDisabled(true);current=null;render();$('menu-title').textContent='Loading menu…';status('Loading nutrition…');$('status').classList.add('loading');
+  try{
+    const data=await api(path);
+    if(version!==selectionVersion)return;
+    showMenu(data);
+    if(data.refreshing)menuRefreshTimer=setTimeout(()=>refreshMenu(path,version),1500);
+  }catch(e){if(version===selectionVersion){status(e.message,true);$('menu-title').textContent='Menu could not load';}}
+  finally{if(version===selectionVersion)setDisabled(false);}
+}
+function render(){const query=$('search').value.toLowerCase();let items=(current?.items||[]).filter(i=>i.name.toLowerCase().includes(query));const mode=$('sort').value;if(mode==='protein')items.sort((a,b)=>(b.protein_g??-1)-(a.protein_g??-1));if(mode==='calories')items.sort((a,b)=>(a.calories??Infinity)-(b.calories??Infinity));if(mode==='name')items.sort((a,b)=>a.name.localeCompare(b.name));let last='';$('rows').replaceChildren();for(const item of items){if(mode==='station'&&item.category!==last){last=item.category;const group=document.createElement('tr');group.className='group';group.innerHTML=`<td colspan="6">${esc(last)}</td>`;$('rows').append(group);}const row=document.createElement('tr'),count=plate.get(key(item))?.servings||0;row.className=count?'selected':'';row.innerHTML=`<td><button class="food-name" aria-haspopup="dialog" title="View full nutrition label">${esc(item.name)}</button><div class="serving">${esc(item.serving||item.menu_serving)}${item.error?' · label unavailable':''}</div></td>${fields.map(f=>`<td>${esc(item[f]==null?(item.macro_display?.[f]||'—'):fmt(item[f]))}</td>`).join('')}<td><input type="number" class="qty" min="0" max="100" step="0.5" value="${count}" aria-label="Servings of ${esc(item.name)}"></td>`;row.querySelector('.food-name').onclick=()=>openLabel(item);row.querySelector('input').addEventListener('input',e=>{const n=Number(e.target.value);if(!Number.isFinite(n)||n<0||n>100){e.target.value=count;return;}const k=key(item);if(n)plate.set(k,{...item,key:k,servings:n,hall:current.hall,section:current.section,meal:current.meal,source_date:current.date,fetched_at:current.fetched_at});else plate.delete(k);row.classList.toggle('selected',n>0);renderPlate();});$('rows').append(row);}$('empty').hidden=items.length>0||!current;$('export-menu').disabled=!current;}
+function renderPlate(){const items=[...plate.values()],t=sum(items);$('plate-count').textContent=items.length?`${items.length} foods · ${fmt(items.reduce((a,i)=>a+i.servings,0))} servings`:'Add servings from the menu.';for(const f of fields)$('total-'+f).textContent=t[f]==null?'Unknown':fmt(t[f])+(f==='calories'?'':' g');$('plate-items').replaceChildren();for(const item of items){const node=document.createElement('div');node.className='plate-item';node.innerHTML=`<span>${esc(item.name)}<small>${fmt(item.servings)} × ${esc(item.serving)} · ${esc(item.hall)}</small></span><button aria-label="Remove ${esc(item.name)}">×</button>`;node.querySelector('button').onclick=()=>{plate.delete(item.key);renderPlate();render();};$('plate-items').append(node);}$('save').disabled=!items.length;}
+async function loadSaved(){saved=(await api('/api/plans')).plans;renderSaved();renderPrep();}
+function renderPrep(){const from=$('prep-from').value,to=$('prep-to').value,groups=new Map();for(const plan of saved.filter(p=>(!from||p.date>=from)&&(!to||p.date<=to))){for(const i of plan.items){const key=JSON.stringify([i.name,i.serving,...fields.map(f=>i[f])]);if(!groups.has(key))groups.set(key,{...i,servings:0});groups.get(key).servings+=i.servings;}}prep=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name));$('prep-list').replaceChildren();if(!prep.length){const p=document.createElement('p');p.textContent='No saved meals in this date range.';$('prep-list').append(p);}else{const div=document.createElement('div');div.className='table-wrap';div.innerHTML=`<table><thead><tr><th>Food to portion</th><th>One serving</th><th>Total servings</th><th>Calories</th><th>Protein (g)</th><th>Carbs (g)</th><th>Fat (g)</th></tr></thead><tbody>${prep.map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.serving)}</td><td>${fmt(i.servings)}</td>${fields.map(f=>`<td>${fmt(i[f]==null?null:i[f]*i.servings)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;$('prep-list').append(div);}$('export-prep').disabled=!prep.length;}
+function renderSaved(){$('saved-list').replaceChildren();if(!saved.length){const p=document.createElement('p');p.textContent='No saved meals yet.';$('saved-list').append(p);}for(const plan of saved){const node=document.createElement('article');node.className='saved-card';node.innerHTML=`<div class="eyebrow">${esc(plan.date||'Undated')} · ${esc(plan.meal||'Meal plan')}</div><h3>${esc(plan.name)}</h3><p>${plan.items.length} foods · ${fmt(plan.items.reduce((a,i)=>a+i.servings,0))} servings</p><div class="saved-totals">${fmt(plan.totals.calories)} kcal · ${fmt(plan.totals.protein_g)} P · ${fmt(plan.totals.carbs_g)} C · ${fmt(plan.totals.fat_g)} F</div><button class="small-button">Load plate</button>`;node.querySelector('button').onclick=()=>{plate=new Map(plan.items.map((i,n)=>[i.key||'saved:'+n,{...i,key:i.key||'saved:'+n}]));$('plan-name').value=plan.name;$('plan-date').value=plan.date;$('plan-meal').value=plan.meal;$('save-status').textContent='Meal loaded.';renderPlate();render();};$('saved-list').append(node);}$('export-plans').disabled=!saved.length;}
+function downloadCSV(filename,rows){const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);}
+$('hall').onchange=loadSections;$('section').onchange=loadOptions;$('date').onchange=()=>{loadMeals();loadMenu();};$('meal').onchange=loadMenu;$('search').oninput=render;$('sort').onchange=render;
+$('clear').onclick=()=>{plate.clear();renderPlate();render();$('save-status').textContent='';};
+$('save').onclick=async()=>{$('save').disabled=true;try{const plan=await api('/api/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:$('plan-name').value,date:$('plan-date').value,meal:$('plan-meal').value,items:[...plate.values()]})});$('save-status').textContent=`Saved “${plan.name}”.`;await loadSaved();}catch(e){$('save-status').textContent=e.message;}finally{renderPlate();}};
+$('export-menu').onclick=()=>downloadCSV('ucsb-menu.csv',[['Hall','Date','Meal','Section','Food','Serving','Calories','Protein g','Carbs g','Fat g','Item ID'],...current.items.map(i=>[current.hall,current.date,current.meal,current.section,i.name,i.serving,...fields.map(f=>i[f]),i.id])]);
+$('export-plans').onclick=()=>downloadCSV('ucsb-meal-plans.csv',[['Plan','Date','Meal','Food','Serving','Servings','Calories','Protein g','Carbs g','Fat g','Source hall','Source menu date'],...saved.flatMap(p=>p.items.map(i=>[p.name,p.date,p.meal,i.name,i.serving,i.servings,...fields.map(f=>i[f]==null?'':Number((i[f]*i.servings).toFixed(2))),i.hall,i.source_date]))]);
+$('prep-from').onchange=renderPrep;$('prep-to').onchange=renderPrep;
+$('export-prep').onclick=()=>downloadCSV('ucsb-prep-portions.csv',[['Food','One serving','Total servings','Calories','Protein g','Carbs g','Fat g'],...prep.map(i=>[i.name,i.serving,i.servings,...fields.map(f=>i[f]==null?'':Number((i[f]*i.servings).toFixed(2)))])]);
+(async()=>{renderPlate();const savedReady=loadSaved().catch(e=>{$('save-status').textContent=e.message;});try{halls=(await api('/api/catalog')).halls;populate('hall',halls.map(h=>({value:h.id,label:h.name})));const portola=halls.find(h=>/Portola/.test(h.name));if(portola)$('hall').value=portola.id;await loadSections();await savedReady;}catch(e){status(e.message,true);}})();
+</script>
+</html>

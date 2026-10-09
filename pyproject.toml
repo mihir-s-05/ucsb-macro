@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ucsb-macros"
+version = "0.1.0"
+description = "UCSB NetNutrition CLI and local meal-planning web app"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["requests>=2.31,<3", "beautifulsoup4>=4.12,<5", "tzdata>=2024.1; platform_system == 'Windows'"]
+
+[project.scripts]
+gaucho = "ucsb_macros.cli:main"
+
+[tool.setuptools]
+packages = ["ucsb_macros"]
+
+[tool.setuptools.package-data]
+ucsb_macros = ["index.html"]
