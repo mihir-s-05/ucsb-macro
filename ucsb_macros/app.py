@@ -21,6 +21,7 @@ from .storage import data_dir
 from .labels import DOCUMENT_VERSION, label_document
 
 BASE = "https://nutrition.info.dining.ucsb.edu/NetNutrition/1"
+USER_AGENT = "Gaucho/0.1 (+https://github.com/mihir-s-05/ucsb-macro)"
 HERE = Path(__file__).resolve().parent
 CACHE_SECONDS = 900
 CATALOG_SECONDS = 86400
@@ -109,7 +110,7 @@ class NetNutrition:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({
-            "User-Agent": "UCSB-Macros-Local/1.0",
+            "User-Agent": USER_AGENT,
             "Referer": BASE,
             "X-Requested-With": "XMLHttpRequest",
         })
