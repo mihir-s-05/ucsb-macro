@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gaucho",
+  "main": "worker/index.ts",
+  "account_id": "35285b92cc8a889b1e38627664901535",
+  "compatibility_date": "2026-10-09",
+  "workers_dev": false,
+  "routes": [{ "pattern": "gaucho.mihir-s.com", "custom_domain": true }],
+  "assets": {
+    "directory": "dist/web",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "gaucho",
+    "database_id": "b8b82d54-c872-4f56-9396-d896c6e621b8",
+    "migrations_dir": "migrations"
+  }],
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.01 }
+  }
+}

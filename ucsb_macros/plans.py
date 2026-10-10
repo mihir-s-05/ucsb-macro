@@ -27,6 +27,8 @@ def list_plans():
 
 
 def validate(data):
+    if not isinstance(data, dict):
+        raise ValueError("Invalid meal plan record.")
     name = str(data.get("name", "")).strip()
     if not 1 <= len(name) <= 100:
         raise ValueError("Give the plan a name (1–100 characters).")
@@ -59,11 +61,21 @@ def validate(data):
 
 
 def save_plan(data):
-    saved = validate(data)
+    return import_plans([data])[0]
+
+
+def import_plans(data):
+    incoming = data if isinstance(data, list) else [data]
+    if not 1 <= len(incoming) <= 500:
+        raise ValueError("Import 1–500 meal plans at a time.")
+    # Validate the complete import before changing any stored plan.
+    saved = [validate(plan) for plan in incoming]
     with _lock:
         current = list_plans()
-        current = [p for p in current if (p["name"], p["date"], p["meal"]) != (saved["name"], saved["date"], saved["meal"])]
-        current.append(saved)
+        by_key = {(p["name"], p["date"], p["meal"]): p for p in current}
+        for plan in saved:
+            by_key[(plan["name"], plan["date"], plan["meal"])] = plan
+        current = list(by_key.values())
         STORE.parent.mkdir(parents=True, exist_ok=True)
         if STORE.exists():
             STORE.with_suffix(".json.bak").write_bytes(STORE.read_bytes())

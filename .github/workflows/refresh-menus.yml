@@ -2,18 +2,55 @@ name: Refresh menus
 
 on:
   workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        description: Run a small source probe or publish the week
+        options: [refresh, probe]
+        default: refresh
+  schedule:
+    - cron: '17 */6 * * *'
 
 permissions:
   contents: read
 
+concurrency:
+  group: gaucho-menu-refresh
+  cancel-in-progress: false
+
+env:
+  CLOUDFLARE_ACCOUNT_ID: '35285b92cc8a889b1e38627664901535'
+  CLOUDFLARE_DATABASE_ID: 'b8b82d54-c872-4f56-9396-d896c6e621b8'
+  GAUCHO_DATA_DIR: '${{ github.workspace }}/.local/source'
+
 jobs:
-  probe:
+  collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - run: python -m pip install .
-      - run: python scripts/probe_source.py
+      - if: inputs.operation == 'probe'
+        run: python scripts/probe_source.py
+      - if: inputs.operation != 'probe'
+        uses: actions/cache@v6
+        with:
+          path: .local/source/cache
+          key: gaucho-source-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: gaucho-source-v1-
+      - if: inputs.operation != 'probe'
+        name: Collect the published week
+        run: python -m ucsb_macros.collector collect --output .local/refresh
+      - if: inputs.operation != 'probe'
+        name: Upload staged snapshot
+        env:
+          CLOUDFLARE_API_TOKEN: '${{ secrets.CLOUDFLARE_API_TOKEN }}'
+        run: python -m ucsb_macros.collector stage .local/refresh/stage.sql
+      - if: inputs.operation != 'probe'
+        name: Publish verified snapshot and prune older data
+        env:
+          CLOUDFLARE_API_TOKEN: '${{ secrets.CLOUDFLARE_API_TOKEN }}'
+        run: python -m ucsb_macros.collector publish .local/refresh/manifest.json

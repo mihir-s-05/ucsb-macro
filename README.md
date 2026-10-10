@@ -115,21 +115,50 @@ Menus and labels cache for 15 minutes, including across CLI invocations. The web
 
 Fresh menu loads use up to four separate sessions to fetch labels concurrently. Each session selects its own hall and menu and makes requests sequentially, so NetNutrition's selection state stays separate. Requests for the same data share a fetch, and other cached requests remain responsive. The full label popup reuses the labels downloaded for the menu. Cached data includes a `fetched_at` timestamp; saved plans retain the values from when they were created and do not refresh automatically.
 
-The repository can be hosted on GitHub. The live web app needs a Python server because UCSB's endpoints use session cookies and return HTML, and the responses inspected did not advertise cross-origin access. A GitHub Pages-only deployment is therefore not the provided live architecture. Deploying publicly would also require account separation and durable per-user plan storage; the current app is intended for one local user.
+The local server shares saved plans with the CLI. The hosted app at **https://gaucho.mihir-s.com** uses browser storage for personal meal plans. It has no public plan-writing endpoint. Plans stay in that browser until exported; clearing browser data removes them.
 
-## Publish the source on GitHub
+## Hosted menus
 
-To publish the source, create a repository under your GitHub account and push this folder.
+The TypeScript Worker serves the existing interface through its static assets binding and reads menus and full labels from a dedicated Cloudflare D1 database. It never scrapes UCSB in response to a visitor. The API retains the catalog, options, menu, and label paths above, plus `GET /api/health` for snapshot age. Successful API responses cache for 60 seconds.
+
+The **Refresh menus** GitHub workflow collects today and the next six days wherever published, plus the everyday sections. It runs at minute 17 every six hours UTC and can also be started manually. It uses at most four concurrent upstream requests and a user agent identifying this repository. A runner cache reuses future/everyday labels for up to a day; today's labels refresh each run. Every item includes its label fetch time. Identical label documents are stored once within each snapshot.
+
+Each run writes a new snapshot ID. Small SQL batches through the D1 API keep the database available while staging the data. A guarded, single SQL statement updates `current_snapshot` only after all expected rows exist. API requests join that pointer and their payload in one statement. Older snapshots are pruned after publication. Any collection or upload failure leaves the published snapshot intact.
+
+The site shows **Menus updated … ago** and **Refresh overdue** after 12 hours. GitHub can disable scheduled workflows after 60 days without repository activity; check `/api/health` and re-enable the workflow if needed. This version uses that visible staleness signal rather than adding a second scheduler with another credential.
+
+GitHub uses a dedicated **D1 Edit** API token scoped to the Cloudflare account, stored as the repository secret `CLOUDFLARE_API_TOKEN`. The account and database IDs in the workflow are not secrets. The refresh job does not use a developer's Wrangler OAuth login.
+
+For Worker development and deployment:
 
 ```sh
-git init
-git add .
-git commit -m "Add UCSB macro CLI and meal planner"
-# Replace YOUR_ACCOUNT and YOUR_REPO with your repository path
-git remote add origin https://github.com/YOUR_ACCOUNT/YOUR_REPO.git
-git branch -M main
-git push -u origin main
+npm ci
+npm run types
+npm run typecheck
+npm run test
+npm run dev
+# Seed the local D1 database before inspecting menus in wrangler dev.
+npx wrangler d1 migrations apply gaucho --local
+python -m ucsb_macros.collector collect --output .local/refresh
+npx wrangler d1 execute gaucho --local --file .local/refresh/stage.sql --yes
+npx wrangler d1 execute gaucho --local --file .local/refresh/publish.sql --yes
+npm run deploy
 ```
+
+`npm run build` marks the hosted interface to use browser plans. The Python package serves the same source interface with local plan storage. D1 schema migrations live in `migrations`; generated assets, caches, and local credentials are ignored by Git.
+
+## Transfer meal plans
+
+Use **Export plans JSON** and **Import plans JSON** in the website. The file is an array of plans in the same format as the CLI, including per-serving macro values, serving counts, source dates, and unknown values. Imports validate the entire file before saving and replace a plan only when its name, date, and meal match.
+
+```sh
+gaucho plan import gaucho-plans.json
+gaucho plan export --format json --output gaucho-plans.json
+```
+
+CSV exports remain available for viewing in spreadsheets. Browser plans and CLI plans do not sync automatically.
+
+The source is at [mihir-s-05/ucsb-macro](https://github.com/mihir-s-05/ucsb-macro).
 
 ## How the upstream integration works
 

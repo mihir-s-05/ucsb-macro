@@ -127,6 +127,10 @@ def run(args):
             data["items"].sort(key=lambda i: i["name"])
         output(data, menu_rows(data), ["ID", "Food", "Serving", "Calories", "Protein g", "Carbs g", "Fat g"], args)
         return
+    if args.action == "import":
+        imported = plans.import_plans(json.loads(Path(args.file).read_text(encoding="utf-8-sig")))
+        output(imported, [[p["name"], p["date"], p["meal"]] for p in imported], ["Imported plan", "Date", "Meal"], args)
+        return
     values = plans.list_plans()
     if args.action == "list":
         output(values, [[p["name"], p["date"], p["meal"], *(p["totals"][f] for f in plans.MACROS)] for p in values],
@@ -204,6 +208,8 @@ def main():
     save.add_argument("--plan-date", help="Date to plan the meal for; may differ from source menu date")
     save.add_argument("--label", help="Meal/prep label (default: source meal)")
     export = actions.add_parser("export"); common(export)
+    importer = actions.add_parser("import", help="Import meal plans exported by the web app or CLI")
+    common(importer); importer.add_argument("file")
     prep = actions.add_parser("prep", help="Aggregate saved plans into a prep portion list"); common(prep)
     prep.add_argument("--from", dest="from_date"); prep.add_argument("--to", dest="to_date")
     args = parser.parse_args()

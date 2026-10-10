@@ -1,0 +1,16 @@
+{
+  "name": "gaucho-worker",
+  "private": true,
+  "scripts": {
+    "types": "wrangler types",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/plan-transfer.test.cjs",
+    "build": "node scripts/build-web.mjs",
+    "dev": "npm run build && wrangler dev --port 8787",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "wrangler": "4.149.0"
+  }
+}

@@ -33,6 +33,7 @@ _key_locks: dict[tuple, threading.RLock] = {}
 _refreshing: set[tuple] = set()
 _retry_after: dict[tuple, float] = {}
 _upstream_slots = threading.BoundedSemaphore(FETCH_WORKERS)
+source_requests = 0
 DATA_DIR = data_dir()
 
 
@@ -117,7 +118,10 @@ class NetNutrition:
         self.landing = self.request("GET", "")
 
     def request(self, method, endpoint, data=None):
+        global source_requests
         with _upstream_slots:
+            with _lock:
+                source_requests += 1
             r = self.session.request(method, BASE + endpoint, data=data, timeout=25)
         r.raise_for_status()
         r.encoding = "utf-8"
@@ -266,14 +270,14 @@ def parse_label(html):
     }
 
 
-def fetch_label(client, root_id, child_id, menu_id, item_id, *, stale=False):
+def fetch_label(client, root_id, child_id, menu_id, item_id, *, stale=False, ttl=CACHE_SECONDS):
     def build():
         raw = client.request("POST", "/NutritionDetail/ShowItemNutritionLabel", {"detailOid": item_id})
         return label_document(raw, client.landing)
-    return cached(("label", DOCUMENT_VERSION, root_id, child_id, menu_id, item_id), build, stale=stale)
+    return cached(("label", DOCUMENT_VERSION, root_id, child_id, menu_id, item_id), build, stale=stale, ttl=ttl)
 
 
-def load_label_batch(items, root_id, child_id, menu_id, seed=None):
+def load_label_batch(items, root_id, child_id, menu_id, seed=None, label_ttl=CACHE_SECONDS):
     # One session per worker, with its own hall/menu selection and sequential requests.
     client = seed
     try:
@@ -284,7 +288,7 @@ def load_label_batch(items, root_id, child_id, menu_id, seed=None):
                 client.panels("/Menu/SelectMenu", {"menuOid": menu_id})
         for item in items:
             try:
-                label = fetch_label(client, root_id, child_id, menu_id, item["id"])
+                label = fetch_label(client, root_id, child_id, menu_id, item["id"], ttl=label_ttl)
                 item.update(parse_label(label["document"]))
             except (requests.RequestException, ValueError) as exc:
                 item.update({"serving": item["menu_serving"], "calories": None,
@@ -365,6 +369,9 @@ class Handler(BaseHTTPRequestHandler):
             if path.path == "/favicon.ico":
                 self.send(204, b"", "image/x-icon")
                 return
+            if path.path == "/plans.js":
+                self.send(200, (HERE / "plans.js").read_bytes(), "text/javascript; charset=utf-8")
+                return
             if path.path == "/api/catalog":
                 result = catalog(stale=True)
             elif path.path == "/api/plans":
@@ -388,15 +395,15 @@ class Handler(BaseHTTPRequestHandler):
             self.send(502, json.dumps({"error": "UCSB's nutrition site did not respond. Please try again."}).encode(), "application/json")
 
     def do_POST(self):
-        if self.path != "/api/plans":
+        if self.path not in ("/api/plans", "/api/plans/import"):
             self.send(404, b"Not found", "text/plain")
             return
         try:
             size = int(self.headers.get("Content-Length", "0"))
-            if not 0 < size <= 500_000:
+            if not 0 < size <= (5_000_000 if self.path == "/api/plans/import" else 500_000):
                 raise ValueError("Invalid plan size.")
             data = json.loads(self.rfile.read(size))
-            saved = plans.save_plan(data)
+            saved = plans.import_plans(data) if self.path == "/api/plans/import" else plans.save_plan(data)
             self.send(200, json.dumps(saved, ensure_ascii=False).encode(), "application/json; charset=utf-8")
         except (ValueError, TypeError, KeyError) as exc:
             self.send(400, json.dumps({"error": str(exc)}).encode(), "application/json")
