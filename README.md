@@ -119,6 +119,19 @@ The local server shares saved plans with the CLI. The hosted app at **https://ga
 
 ## Hosted menus
 
+The public REST API is available at **https://gaucho.mihir-s.com/api/v1**. Open [the API docs](https://gaucho.mihir-s.com/docs) from the site's header for a request playground, examples, and an [OpenAPI schema](https://gaucho.mihir-s.com/api/openapi.json). No API key is required, and cross-origin browser requests are allowed.
+
+```sh
+curl "https://gaucho.mihir-s.com/api/v1/halls"
+curl "https://gaucho.mihir-s.com/api/v1/menus?hall=Portola"
+curl "https://gaucho.mihir-s.com/api/v1/menu?hall=Portola&meal=Lunch"
+curl "https://gaucho.mihir-s.com/api/v1/menu?hall=Carrillo&section=Salad%20Bar"
+```
+
+`hall`, `section`, and `item` accept IDs, exact names, or unique substrings. Daily menus default to today in California and Lunch; use `/menus` to discover dates and Brunch. `/menu` accepts `search` to filter foods. `/item` returns one food, and `/label` returns that food plus its full label HTML; both require `item` and accept the same location/date/meal parameters as `/menu`. A numeric `menu` ID overrides date/meal selection. Unknown numeric macros stay `null`. Requests use one published snapshot; a snapshot change during dependent reads returns a retryable `409`.
+
+Run `npm run test:api` against a local Worker with published D1 data on port 8787. Set `GAUCHO_API_URL` to test a deployed instance instead. These integration checks cover menu selection, macros, full labels, errors, CORS, and the published documentation.
+
 The TypeScript Worker serves the existing interface through its static assets binding and reads menus and full labels from a dedicated Cloudflare D1 database. It never scrapes UCSB in response to a visitor. The API retains the catalog, options, menu, and label paths above, plus `GET /api/health` for snapshot age. Successful API responses cache for 60 seconds.
 
 The **Refresh menus** GitHub workflow collects today and the next six days wherever published, plus the everyday sections. It runs at minute 17 every six hours UTC and can also be started manually. It uses at most four concurrent upstream requests and a user agent identifying this repository. A runner cache reuses future/everyday labels for up to a day; today's labels refresh each run. Every item includes its label fetch time. Identical label documents are stored once within each snapshot.

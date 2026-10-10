@@ -5,6 +5,7 @@
     "types": "wrangler types",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/plan-transfer.test.cjs",
+    "test:api": "node --test tests/api.integration.test.mjs",
     "build": "node scripts/build-web.mjs",
     "dev": "npm run build && wrangler dev --port 8787",
     "deploy": "npm run build && wrangler deploy"

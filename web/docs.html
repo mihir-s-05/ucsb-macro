@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gaucho API docs</title>
+<style>
+:root{color-scheme:light;--ink:#1b2d36;--paper:#f6f6ee;--line:#d5dacf;--muted:#617078}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.6 system-ui,sans-serif}header{padding:20px max(24px,calc((100vw - 1080px)/2));border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:24px;background:#fffefa}a{color:inherit;text-underline-offset:3px}.brand{font:26px Georgia,serif;text-decoration:none}header nav{display:flex;align-items:center;gap:20px;font-size:13px}main{max-width:1080px;margin:auto;padding:34px 24px 60px}h1,h2{font-family:Georgia,serif;line-height:1.2}h1{font-size:38px;font-weight:400;margin:0 0 14px}h2{font-size:25px;font-weight:400;margin:34px 0 14px}p{max-width:800px}code,pre{font-family:Consolas,monospace;font-size:13px}code{overflow-wrap:anywhere}pre{padding:18px;background:#fffefa;border:1px solid var(--line);border-radius:5px;overflow:auto;line-height:1.6}table{width:100%;border-collapse:collapse;background:#fffefa}th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:12px;text-transform:uppercase;color:var(--muted)}.table-wrap{overflow:auto}.muted{color:var(--muted);font-size:13px}.try{border:1px solid var(--line);background:#fffefa;padding:20px;border-radius:5px}.fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}label{display:grid;gap:5px;font-size:12px;color:var(--muted)}input,select,button{font:inherit;border:1px solid var(--line);border-radius:4px;background:#fff;padding:10px;color:var(--ink);min-width:0}button{cursor:pointer;background:#1b2d36;color:white;padding:10px 18px;margin-top:16px}button:disabled{opacity:.5}#request{display:block;margin:18px 0 0}#result{max-height:440px;white-space:pre;tab-size:2}.links{display:flex;gap:20px;flex-wrap:wrap}.pill{font:12px Consolas,monospace;background:#e7eedb;padding:4px 7px;border-radius:3px;margin-right:7px}summary{cursor:pointer}@media(max-width:650px){header{padding:18px 20px}.brand{font-size:22px}main{padding:25px 18px 45px}h1{font-size:31px}.fields{grid-template-columns:1fr 1fr}th,td{padding:10px;font-size:13px}}@media(max-width:400px){.fields{grid-template-columns:1fr}}
+</style>
+<style>[hidden]{display:none!important}</style>
+<header><a class="brand" href="/">UCSB <i>macros</i></a><nav><a href="/">Meal planner</a><a href="/api/openapi.json">OpenAPI JSON</a></nav></header>
+<main>
+<h1>Gaucho REST API</h1>
+<p>Dining menus, serving sizes, macros, and full nutrition labels from <a href="/">gaucho.mihir-s.com</a>. Public JSON endpoints. No API key.</p>
+<pre>https://gaucho.mihir-s.com/api/v1</pre>
+<div class="links"><a href="#endpoints">Endpoints</a><a href="#try">Try a request</a><a href="#responses">Response fields</a><a href="/api/openapi.json" download="gaucho-openapi.json">Download OpenAPI</a></div>
+
+<h2 id="endpoints">Endpoints</h2>
+<div class="table-wrap"><table><thead><tr><th>GET</th><th>Returns</th><th>Parameters</th></tr></thead><tbody>
+<tr><td><a href="/api/v1/halls"><code>/halls</code></a></td><td>Dining locations and sections</td><td>None</td></tr>
+<tr><td><a href="/api/v1/menus?hall=Portola"><code>/menus</code></a></td><td>Published dates, meals, and menu IDs</td><td><code>hall</code>; optional <code>section</code>, <code>date</code></td></tr>
+<tr><td><code>/menu</code></td><td>All foods on a menu, with serving sizes and macros</td><td><code>hall</code>; optional <code>section</code>, <code>date</code>, <code>meal</code>, <code>menu</code>, <code>search</code></td></tr>
+<tr><td><code>/item</code></td><td>One food’s macros and source menu</td><td><code>hall</code>, <code>item</code>; optional <code>section</code>, <code>date</code>, <code>meal</code>, <code>menu</code></td></tr>
+<tr><td><code>/label</code></td><td>The food plus full NetNutrition label HTML</td><td>Same as <code>/item</code></td></tr>
+<tr><td><a href="/api/v1/health"><code>/health</code></a></td><td>Snapshot timestamp, age, and freshness</td><td>None</td></tr>
+</tbody></table></div>
+<p><code>hall</code>, <code>section</code>, and <code>item</code> accept an ID, an exact name, or a unique substring. For example, <code>hall=Portola</code> and <code>hall=15</code> select the same location.</p>
+<p>The section defaults to the daily menu, and the date defaults to today in California. The meal defaults to Lunch. Use <code>/menus</code> to discover Brunch and other available meals. A <code>menu</code> ID overrides date and meal selection. Everyday sections, such as Salad Bar, select their everyday menu.</p>
+
+<h2>Examples</h2>
+<pre>curl "https://gaucho.mihir-s.com/api/v1/halls"
+curl "https://gaucho.mihir-s.com/api/v1/menus?hall=Portola"
+curl "https://gaucho.mihir-s.com/api/v1/menu?hall=Portola&amp;meal=Lunch"
+curl "https://gaucho.mihir-s.com/api/v1/menu?hall=Carrillo&amp;section=Salad%20Bar"</pre>
+<p>Find a published menu, then request its foods:</p>
+<pre>const base = "https://gaucho.mihir-s.com/api/v1";
+const choices = await fetch(`${base}/menus?hall=Portola`).then(r =&gt; r.json());
+const menu = choices.menus.find(m =&gt; m.meal === "Lunch") ?? choices.menus[0];
+const params = new URLSearchParams({
+  hall: "Portola", menu: String(menu.id), search: "chicken"
+});
+const response = await fetch(`${base}/menu?${params}`);
+const data = await response.json();
+if (!response.ok) throw new Error(data.error);
+console.log(data.items);</pre>
+
+<h2 id="try">Try a request</h2>
+<form class="try" id="try-form">
+<div class="fields">
+<label>Endpoint<select id="endpoint"><option value="halls">/halls</option><option value="menus" selected>/menus</option><option value="menu">/menu</option><option value="item">/item</option><option value="label">/label</option><option value="health">/health</option></select></label>
+<label id="hall-field">Dining location<input id="hall" value="Portola" placeholder="Portola or 15"></label>
+<label id="section-field">Section<input id="section" placeholder="Daily menu by default"></label>
+<label id="date-field">Date<input id="date" type="date"></label>
+<label id="meal-field">Meal<input id="meal" value="Lunch"></label>
+<label id="menu-field">Menu ID<input id="menu" placeholder="Optional; overrides date and meal"></label>
+<label id="item-field">Food name or ID<input id="item" placeholder="Copy from a menu response"></label>
+<label id="search-field">Search foods<input id="search" placeholder="chicken"></label>
+</div>
+<button id="send" type="submit">Send GET request</button>
+<a id="request" href="/api/v1/menus?hall=Portola"><code>/api/v1/menus?hall=Portola</code></a>
+<p class="muted" id="request-status" role="status">Select an endpoint and send a request.</p>
+<pre id="result" hidden></pre>
+</form>
+
+<h2 id="responses">Response fields</h2>
+<div class="table-wrap"><table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>items</code> / <code>item</code></td><td>Menu foods, or the requested food.</td></tr>
+<tr><td><code>serving</code></td><td>The serving size printed on the original label.</td></tr>
+<tr><td><code>calories</code></td><td>Calories per listed serving.</td></tr>
+<tr><td><code>protein_g</code>, <code>carbs_g</code>, <code>fat_g</code></td><td>Grams per listed serving.</td></tr>
+<tr><td><code>fiber_g</code>, <code>sugar_g</code>, <code>sodium_mg</code></td><td>Fiber and sugar in grams, sodium in milligrams, per listed serving.</td></tr>
+<tr><td><code>macro_display</code></td><td>Original display values, including <code>&lt;1</code>. Unknown numeric values are <code>null</code>.</td></tr>
+<tr><td><code>label_fetched_at</code></td><td>When the food’s label was collected. Future and everyday labels may be reused for up to 24 hours.</td></tr>
+<tr><td><code>snapshot</code></td><td><code>id</code>, <code>collected_at</code>, <code>published_at</code>, <code>age_seconds</code>, and <code>stale</code>.</td></tr>
+<tr><td><code>document</code></td><td>Full label HTML from <code>/label</code>, including ingredients and source styles. Render it in a sandboxed iframe.</td></tr>
+</tbody></table></div>
+<p>Menus refresh every six hours. Successful JSON responses cache for 60 seconds. A snapshot older than 12 hours has <code>stale: true</code>. Compare snapshot IDs when combining several responses; retry if they differ.</p>
+<h2>Errors and access</h2>
+<p>Errors return <code>{"error":"…"}</code>. <code>400</code> means invalid input, <code>404</code> means unavailable data, <code>409</code> means an ambiguous name or a snapshot change, and <code>503</code> means a temporary service issue. Ambiguous names include a <code>choices</code> array; use an exact name or ID.</p>
+<p>GET, HEAD, and OPTIONS are supported. Cross-origin browser requests are allowed. Writes return <code>405</code>. Personal saved plans stay in the browser.</p>
+<details><summary>Existing endpoints used by the meal planner</summary><p><code>/api/catalog</code>, <code>/api/options?hall=15&amp;section=16</code>, <code>/api/menu?hall=15&amp;section=16&amp;menu=…</code>, <code>/api/label?hall=15&amp;section=16&amp;menu=…&amp;item=…</code>, and <code>/api/health</code> remain available.</p></details>
+</main>
+<script>
+const fields=['hall','section','date','meal','menu','item','search'];
+const uses={halls:[],health:[],menus:['hall','section','date'],menu:['hall','section','date','meal','menu','search'],item:['hall','section','date','meal','menu','item'],label:['hall','section','date','meal','menu','item']};
+function requestPath(){const endpoint=document.getElementById('endpoint').value;const query=new URLSearchParams();for(const name of uses[endpoint]){const value=document.getElementById(name).value.trim();if(value)query.set(name,value);}return '/api/v1/'+endpoint+(query.size?'?'+query:'');}
+function update(){const active=uses[document.getElementById('endpoint').value];for(const name of fields)document.getElementById(name+'-field').hidden=!active.includes(name);const path=requestPath();const link=document.getElementById('request');link.href=path;link.querySelector('code').textContent=path;}
+document.getElementById('try-form').addEventListener('input',update);document.getElementById('endpoint').addEventListener('change',update);
+document.getElementById('try-form').addEventListener('submit',async event=>{event.preventDefault();update();const button=document.getElementById('send'),status=document.getElementById('request-status'),result=document.getElementById('result');button.disabled=true;status.textContent='Loading…';try{const start=performance.now();const response=await fetch(requestPath());const data=await response.json();result.textContent=JSON.stringify(data,null,2);result.hidden=false;status.textContent=`HTTP ${response.status} · ${Math.round(performance.now()-start)} ms${data.snapshot?' · Snapshot '+data.snapshot.id:''}`;}catch(error){status.textContent=error.message;}finally{button.disabled=false;}});
+update();
+</script>
+</html>
