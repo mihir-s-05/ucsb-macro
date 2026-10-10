@@ -33,17 +33,29 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install .
+      - if: inputs.operation != 'probe'
+        name: Check D1 credentials
+        env:
+          CLOUDFLARE_API_TOKEN: '${{ secrets.CLOUDFLARE_API_TOKEN }}'
+        run: python -m ucsb_macros.collector check
       - if: inputs.operation == 'probe'
         run: python scripts/probe_source.py
       - if: inputs.operation != 'probe'
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: .local/source/cache
           key: gaucho-source-v1-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: gaucho-source-v1-
       - if: inputs.operation != 'probe'
+        id: collect
         name: Collect the published week
         run: python -m ucsb_macros.collector collect --output .local/refresh
+      - if: inputs.operation != 'probe'
+        name: Save source cache before publication
+        uses: actions/cache/save@v6
+        with:
+          path: .local/source/cache
+          key: gaucho-source-v1-${{ github.run_id }}-${{ github.run_attempt }}
       - if: inputs.operation != 'probe'
         name: Upload staged snapshot
         env:

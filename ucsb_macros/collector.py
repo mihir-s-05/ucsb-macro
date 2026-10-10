@@ -148,7 +148,12 @@ def d1_query(sql, params=None):
         if response.status_code in (429, 500, 502, 503, 504) and attempt < 3:
             time.sleep(2 ** attempt)
             continue
-        response.raise_for_status()
+        if not response.ok:
+            try:
+                errors = response.json().get("errors", [])
+            except ValueError:
+                errors = []
+            raise ValueError(f"D1 HTTP {response.status_code}: " + compact(errors))
         result = response.json()
         if not result.get("success") or not result.get("result") or not all(r.get("success") for r in result["result"]):
             raise ValueError("D1 query failed: " + compact(result.get("errors", [])))
@@ -204,6 +209,7 @@ def main():
     collector.add_argument("--output", default=".local/refresh")
     uploader = commands.add_parser("stage")
     uploader.add_argument("sql", type=Path)
+    commands.add_parser("check", help="Verify D1 credentials before contacting UCSB")
     publisher = commands.add_parser("publish")
     publisher.add_argument("manifest", type=Path)
     args = parser.parse_args()
@@ -213,6 +219,9 @@ def main():
         print(compact(write_snapshot(args.output, resources, labels, summary, collected_at=collected_at)), flush=True)
     elif args.command == "stage":
         stage(args.sql)
+    elif args.command == "check":
+        d1_query("SELECT singleton FROM current_snapshot LIMIT 1")
+        print("D1 credentials verified.", flush=True)
     else:
         publish(json.loads(args.manifest.read_text(encoding="utf-8")))
 
