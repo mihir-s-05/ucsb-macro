@@ -140,6 +140,8 @@ Each run writes a new snapshot ID. Small SQL batches through the D1 API keep the
 
 The site shows **Menus updated … ago** and **Refresh overdue** after 12 hours. GitHub can disable scheduled workflows after 60 days without repository activity; check `/api/health` and re-enable the workflow if needed. This version uses that visible staleness signal rather than adding a second scheduler with another credential.
 
+If collection fails with `CERTIFICATE_VERIFY_FAILED`, check the certificate chain served by UCSB's NetNutrition host. After the November 2026 renewal it omitted its issuing intermediate. The adapter supplies [SSL.com's published intermediate](https://repo-certs.ssl.com/repo/certs/SSL.com-TLS-I-RSA-R1.pem) for NetNutrition connections using Requests' default CA bundle. Hostname, expiration, and verification against a trusted root are still required. Remove the workaround once UCSB consistently serves the full chain.
+
 GitHub uses a dedicated **D1 Edit** API token scoped to the Cloudflare account, stored as the repository secret `CLOUDFLARE_API_TOKEN`. The account and database IDs in the workflow are not secrets. The refresh job does not use a developer's Wrangler OAuth login.
 
 For Worker development and deployment:

@@ -8,7 +8,7 @@ version = "0.2.0"
 description = "UCSB NetNutrition CLI and local meal-planning web app"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["requests>=2.31,<3", "beautifulsoup4>=4.12,<5", "tzdata>=2024.1; platform_system == 'Windows'"]
+dependencies = ["requests>=2.32.4,<3", "beautifulsoup4>=4.12,<5", "tzdata>=2024.1; platform_system == 'Windows'"]
 
 [project.scripts]
 gaucho = "ucsb_macros.cli:main"
@@ -17,4 +17,4 @@ gaucho = "ucsb_macros.cli:main"
 packages = ["ucsb_macros"]
 
 [tool.setuptools.package-data]
-ucsb_macros = ["index.html", "plans.js"]
+ucsb_macros = ["index.html", "plans.js", "netnutrition-issuer.pem"]

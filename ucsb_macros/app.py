@@ -17,6 +17,7 @@ from urllib.parse import parse_qs, urlparse
 import requests
 from bs4 import BeautifulSoup
 from . import plans
+from .source_tls import NetNutritionTLS
 from .storage import data_dir
 from .labels import DOCUMENT_VERSION, label_document
 
@@ -110,6 +111,7 @@ def cached(key, build, *, ttl=CACHE_SECONDS, stale=False):
 class NetNutrition:
     def __init__(self):
         self.session = requests.Session()
+        self.session.mount(BASE, NetNutritionTLS())
         self.session.headers.update({
             "User-Agent": USER_AGENT,
             "Referer": BASE,
