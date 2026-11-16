@@ -66,9 +66,14 @@ test('resolves names and IDs, selects dates/meals, filters foods, and retains ex
 test('serves one food and its original label with per-serving macros', async () => {
   const food = menu.items[0];
   const byId = await request('/api/v1/item', { ...selection, item: food.id });
-  const byName = await request('/api/v1/item', { ...selection, item: food.name });
   assert.deepEqual(byId.item, food);
-  assert.deepEqual(byName.item, food);
+  const sameName = menu.items.filter(item => item.name.toLowerCase() === food.name.toLowerCase());
+  const byName = await request('/api/v1/item', { ...selection, item: food.name }, sameName.length > 1 ? 409 : 200);
+  if (sameName.length > 1) {
+    assert.deepEqual(byName.choices, sameName.map(({ id, name }) => ({ id, name })));
+  } else {
+    assert.deepEqual(byName.item, food);
+  }
   for (const name of ['calories', 'protein_g', 'carbs_g', 'fat_g']) {
     assert.ok(food[name] === null || (typeof food[name] === 'number' && Number.isFinite(food[name])));
   }
