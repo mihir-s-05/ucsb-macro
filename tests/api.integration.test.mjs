@@ -56,8 +56,8 @@ test('resolves names and IDs, selects dates/meals, filters foods, and retains ex
   const matchingDate = await request('/api/v1/menus', { hall: 'Portola', date: choice.date });
   assert.ok(matchingDate.menus.length);
   assert.ok(matchingDate.menus.every(m => m.date === choice.date));
-  const query = menu.items[0].name.slice(0, 5).toUpperCase();
-  const filtered = await request('/api/v1/menu', { ...selection, search: query });
+  const query = menu.items[0].name.slice(0, 5).trim().toUpperCase();
+  const filtered = await request('/api/v1/menu', { ...selection, search: ` ${query} ` });
   assert.deepEqual(filtered.items, menu.items.filter(i => i.name.toUpperCase().includes(query)));
   const overridden = await request('/api/v1/menu', { ...selection, date: '1900-01-01', meal: 'Unavailable' });
   assert.equal(overridden.id, choice.id);
