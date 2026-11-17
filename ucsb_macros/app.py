@@ -4,6 +4,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import logging
+import random
 import re
 import threading
 import tempfile
@@ -28,6 +30,15 @@ CACHE_SECONDS = 900
 CATALOG_SECONDS = 86400
 MAX_STALE_SECONDS = 86400
 FETCH_WORKERS = 4
+SOURCE_RETRY_DELAYS = (2, 5)
+# These POSTs only read a label or set a selection to the supplied ID.
+REPLAYABLE_POSTS = frozenset({
+    "/Unit/SelectUnitFromUnitsList",
+    "/Unit/SelectUnitFromChildUnitsList",
+    "/Menu/SelectMenu",
+    "/NutritionDetail/ShowItemNutritionLabel",
+})
+logger = logging.getLogger(__name__)
 _cache: dict[tuple, tuple[float, object]] = {}
 _lock = threading.RLock()
 _key_locks: dict[tuple, threading.RLock] = {}
@@ -117,14 +128,31 @@ class NetNutrition:
             "Referer": BASE,
             "X-Requested-With": "XMLHttpRequest",
         })
-        self.landing = self.request("GET", "")
+        try:
+            self.landing = self.request("GET", "")
+        except requests.RequestException:
+            self.close()
+            raise
 
     def request(self, method, endpoint, data=None):
         global source_requests
-        with _upstream_slots:
-            with _lock:
-                source_requests += 1
-            r = self.session.request(method, BASE + endpoint, data=data, timeout=25)
+        replayable = (method == "GET" and endpoint == "") or (method == "POST" and endpoint in REPLAYABLE_POSTS)
+        delays = SOURCE_RETRY_DELAYS if replayable else ()
+        for attempt in range(len(delays) + 1):
+            try:
+                with _upstream_slots:
+                    with _lock:
+                        source_requests += 1
+                    r = self.session.request(method, BASE + endpoint, data=data, timeout=25)
+                break
+            except (requests.exceptions.SSLError, requests.exceptions.ProxyError):
+                raise
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
+                if attempt == len(delays):
+                    raise
+                logger.warning("NetNutrition %s %s: %s; retry %d/%d", method, endpoint or "/",
+                               type(exc).__name__, attempt + 1, len(delays))
+                time.sleep(delays[attempt] + random.random())
         r.raise_for_status()
         r.encoding = "utf-8"
         return r.text

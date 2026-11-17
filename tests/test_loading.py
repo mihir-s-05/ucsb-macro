@@ -13,6 +13,49 @@ from ucsb_macros import app
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
+class SourceRetries(unittest.TestCase):
+    def test_recovers_landing_page_and_menu_selection_on_the_same_session(self):
+        with patch.object(app.requests, "Session") as factory, patch.object(app.time, "sleep") as sleep:
+            session = factory.return_value
+            session.request.side_effect = [requests.exceptions.ReadTimeout(), response(200, "landing"),
+                                           requests.exceptions.ConnectionError(), response(200, '{"success":true,"panels":[]}')]
+            with self.assertLogs(app.logger, level="WARNING"):
+                client = app.NetNutrition()
+                self.assertEqual(client.landing, "landing")
+                self.assertEqual(client.panels("/Menu/SelectMenu", {"menuOid": 42}), {})
+            calls = session.request.call_args_list
+            self.assertEqual(calls[0], calls[1])
+            self.assertEqual(calls[2], calls[3])
+            self.assertEqual(sleep.call_count, 2)
+
+    def test_persistent_timeout_stops_and_closes_failed_session(self):
+        with patch.object(app.requests, "Session") as factory, patch.object(app.time, "sleep") as sleep:
+            session = factory.return_value
+            session.request.side_effect = requests.exceptions.ReadTimeout()
+            with self.assertLogs(app.logger, level="WARNING"), self.assertRaises(requests.exceptions.ReadTimeout):
+                app.NetNutrition()
+            self.assertEqual(session.request.call_count, 3)
+            self.assertLess(sleep.call_args_list[0].args[0], sleep.call_args_list[1].args[0])
+            session.close.assert_called_once()
+
+    def test_certificate_and_http_errors_do_not_retry(self):
+        for result, error in [(requests.exceptions.SSLError(), requests.exceptions.SSLError),
+                              (response(403, "Forbidden"), requests.exceptions.HTTPError)]:
+            with self.subTest(error=error), patch.object(app.requests, "Session") as factory:
+                session = factory.return_value
+                session.request.side_effect = [result]
+                with self.assertRaises(error):
+                    app.NetNutrition()
+                session.request.assert_called_once()
+
+
+def response(status, body):
+    result = requests.Response()
+    result.status_code = status
+    result._content = body.encode("utf-8")
+    return result
+
+
 class Loading(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

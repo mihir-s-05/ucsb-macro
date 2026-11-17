@@ -136,6 +136,8 @@ The TypeScript Worker serves the existing interface through its static assets bi
 
 The **Refresh menus** GitHub workflow collects today and the next six days wherever published, plus the everyday sections. It runs at minute 17 every six hours UTC and can also be started manually. It uses at most four concurrent upstream requests and a user agent identifying this repository. A runner cache reuses future/everyday labels for up to a day; today's labels refresh each run. Every item includes its label fetch time. Identical label documents are stored once within each snapshot.
 
+For NetNutrition's landing page, menu selection and label requests, the adapter retries timeouts and dropped connections up to twice with a short delay. Certificate errors and HTTP error responses fail normally.
+
 Each run writes a new snapshot ID. Small SQL batches through the D1 API keep the database available while staging the data. A guarded, single SQL statement updates `current_snapshot` only after all expected rows exist. API requests join that pointer and their payload in one statement. Older snapshots are pruned after publication. Any collection or upload failure leaves the published snapshot intact.
 
 The site shows **Menus updated … ago** and **Refresh overdue** after 12 hours. GitHub can disable scheduled workflows after 60 days without repository activity; check `/api/health` and re-enable the workflow if needed. This version uses that visible staleness signal rather than adding a second scheduler with another credential.
